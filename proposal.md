@@ -22,5 +22,5 @@
 - Day and night cycle.
 - Other dimensions like nether.
 - Player can be in different modes like hardcore and creative.
-- Player can change thier skin.
+- Player can change their skin.
 - Boss fights like the Ender Dragon.
