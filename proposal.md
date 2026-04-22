@@ -14,6 +14,7 @@
 - Player can place blocks and is able to craft tools with wood and stone.
 - Mobs in game even if player can't interact with them.
 - At least 5 block deep ground (like 2 blocks grass and dirt then 3 blocks of stone).
+- Basic sounds for objects breaking and being placed.
 
 ## Nice To Have
 
