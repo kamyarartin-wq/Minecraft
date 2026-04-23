@@ -8,7 +8,7 @@
 
 - Trees for wood.
 - Layers so player can mine (Dirt, grass and stone).
-- Player can brake blocks and pick them up.
+- Player can break blocks and pick them up.
 - Player has inventory.
 - Map is random everytime.
 - Player can place blocks and is able to craft tools with wood and stone.
