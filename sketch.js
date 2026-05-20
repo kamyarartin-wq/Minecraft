@@ -5,6 +5,9 @@
 // Extra for Experts:
 // - describe what you did to take this project "above and beyond"
 
+// Constants
+const BLOCK_SIZE = 40;
+
 // Images
 let imgs = {};
 let playerImgs = {};
