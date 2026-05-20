@@ -5,9 +5,25 @@
 // Extra for Experts:
 // - describe what you did to take this project "above and beyond"
 
+// Images
 let imgs = {};
 let playerImgs = {};
 
+// Player
+let player = {
+  x: 0, y: 0,
+  w: BLOCK_SIZE * 0.6,
+  h: BLOCK_SIZE * 1.8,
+  vx: 0, vy: 0,
+  onGround: false,
+  facing: 1,
+};
+
+// Inventory
+let selectedHotbar = 0;
+let inventoryOpen = false;
+
+// Load all images
 function preload() {
   imgs[GRASS] = loadImage('grass.png');
   imgs[DIRT] = loadImage('dirt.png');
@@ -50,4 +66,20 @@ function drawPlayer() {
     }
   }
   pop();
+}
+
+function addItem(type, count) {
+  for (let i = 0; i < inventory.length; i++) {
+    if (inventory[i] && inventory[i].type === type) {
+      inventory[i].count += count;
+      return true;
+    }
+  }
+  for (let i = 0; i < inventory.length; i++) {
+    if (!inventory[i]) {
+      inventory[i] = {type, count};
+      return true;
+    }
+  }
+  return false; 
 }
