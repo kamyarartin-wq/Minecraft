@@ -7,6 +7,17 @@
 
 // Constants
 const BLOCK_SIZE = 40;
+const GRASS = 1;
+const DIRT = 2;
+const STONE = 3;
+const LOG = 4;
+const LEAVES = 5;
+const PLANK = 6;
+const STICK = 7;
+const WOOD_PICK = 8;
+const STONE_PICK = 9;
+const IRON_ORE = 10;
+const IRON_PICK = 11;
 
 // Images
 let imgs = {};
@@ -14,10 +25,12 @@ let playerImgs = {};
 
 // Player
 let player = {
-  x: 0, y: 0,
+  x: 0,
+  y: 0,
   w: BLOCK_SIZE * 0.6,
   h: BLOCK_SIZE * 1.8,
-  vx: 0, vy: 0,
+  vx: 0,
+  vy: 0,
   onGround: false,
   facing: 1,
 };
@@ -43,7 +56,6 @@ function preload() {
   playerImgs.standing = loadImage('player-standing.png');
   playerImgs.walking = loadImage('player-walking.png');
   playerImgs.mining = loadImage('player-mining.png');
-  playerImgs.stonePick = loadImage('player-stone-pickaxe.png');
 }
 
 function setup() {
