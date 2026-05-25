@@ -36,6 +36,7 @@ let player = {
 };
 
 // Inventory
+let inventory  = new Array(36).fill(null);
 let selectedHotbar = 0;
 let inventoryOpen = false;
 
@@ -64,6 +65,8 @@ function setup() {
 
 function draw() {
   background("red");
+
+  drawHotbar();
 }
 
 function drawPlayer() {
@@ -97,4 +100,23 @@ function addItem(type, count) {
     }
   }
   return false; 
+}
+
+function drawHotbar() {
+  let ss = 50; 
+  let pad = 4;
+  let totalW = 9 * (ss + pad) - pad;
+  let sx = width / 2 - totalW / 2;
+  let sy = height - ss - 10;
+
+  for (let i = 0; i < 9; i++) {
+    let x = sx + i * (ss + pad);
+    let sel = i === selectedHotbar;
+
+    fill(sel ? 210 : 80, sel ? 210 : 80, sel ? 210 : 80, 210);
+    stroke(sel ? 255 : 55);
+    strokeWeight(sel ? 3 : 1);
+    rect(x, sy, ss, ss, 5);
+    drawItemAt(inventory[i], x, sy, ss);
+  }
 }
