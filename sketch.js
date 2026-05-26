@@ -136,7 +136,7 @@ function drawItemAt(slot, x, y, size) {
   let padding = size * 0.1;
   let drawX = x + padding;
   let drawY = y + padding;
-  let drawSize = size - (padding * 2);
+  let drawSize = size - padding * 2;
 
   if (imgs[slot.type]) {
     image(imgs[slot.type], drawX, drawY, drawSize, drawSize);
@@ -166,9 +166,7 @@ function drawInventoryScreen() {
   fill(65, 65, 65, 235);
   stroke(40);
   strokeWeight(2);
-  rect(layout.invX - 10, layout.invY - 10,
-       9 * (layout.ss + layout.pad) + 12,
-       4 * (layout.ss + layout.pad) + 12, 6);
+  rect(layout.invX - 10, layout.invY - 10, 9 * (layout.ss + layout.pad) + 12, 4 * (layout.ss + layout.pad) + 12, 6);
 
   // Draw all 36 inventory slots
   for (let row = 0; row < 4; row++) {
@@ -220,8 +218,8 @@ function drawInventoryScreen() {
 function getInvLayout() {
   let ss = 42;
   let pad = 4;
-  let invX = width / 2 - (9 * (ss + pad)) / 2;
-  let invY = height / 2 - (4 * (ss + pad)) / 2 - 40;
+  let invX = width / 2 - 9 * (ss + pad) / 2;
+  let invY = height / 2 - 4 * (ss + pad) / 2 - 40;
   let craftX = invX;
   let craftY = invY + 4 * (ss + pad) + 28;
   let arrowX = craftX + 3 * (ss + pad) + 22;
