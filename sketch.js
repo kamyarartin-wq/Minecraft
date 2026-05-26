@@ -67,6 +67,10 @@ function draw() {
   background("red");
 
   drawHotbar();
+
+  if (inventoryOpen) {
+    drawInventoryScreen();
+  }
 }
 
 function drawPlayer() {
@@ -86,6 +90,7 @@ function drawPlayer() {
   pop();
 }
 
+// Tries to stack onto an existing slot first, then fills an empty one
 function addItem(type, count) {
   for (let i = 0; i < inventory.length; i++) {
     if (inventory[i] && inventory[i].type === type) {
@@ -102,6 +107,7 @@ function addItem(type, count) {
   return false; 
 }
 
+// Hotbar sits at the bottom center of the screen and selected slot gets a brighter background
 function drawHotbar() {
   let ss = 50; 
   let pad = 4;
@@ -119,4 +125,108 @@ function drawHotbar() {
     rect(x, sy, ss, ss, 5);
     drawItemAt(inventory[i], x, sy, ss);
   }
+}
+
+// Draws one item inside a slot
+function drawItemAt(slot, x, y, size) {
+  if (!slot || slot.count <= 0) {
+    return;
+  }
+
+  let padding = size * 0.1;
+  let drawX = x + padding;
+  let drawY = y + padding;
+  let drawSize = size - (padding * 2);
+
+  if (imgs[slot.type]) {
+    image(imgs[slot.type], drawX, drawY, drawSize, drawSize);
+  }
+
+  // Only show the count if there's more than 1 so single items stay clean
+  if (slot.count > 1) {
+    fill(255);
+    stroke(0);
+    strokeWeight(2);
+    textAlign(RIGHT, BOTTOM);
+    textSize(11);
+    text(slot.count, x + size - 3, y + size - 2);
+    noStroke();
+  }
+}
+
+// Full inventory screen with 36 slots and the 3x3 crafting grid
+function drawInventoryScreen() {
+  fill(0, 0, 0, 155);
+  noStroke();
+  rect(0, 0, width, height);
+
+  let layout = getInvLayout();
+
+  // Dark panel behind the inventory slots
+  fill(65, 65, 65, 235);
+  stroke(40);
+  strokeWeight(2);
+  rect(layout.invX - 10, layout.invY - 10,
+       9 * (layout.ss + layout.pad) + 12,
+       4 * (layout.ss + layout.pad) + 12, 6);
+
+  // Draw all 36 inventory slots
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 9; col++) {
+      let i = row * 9 + col;
+      let x = layout.invX + col * (layout.ss + layout.pad);
+      let y = layout.invY + row * (layout.ss + layout.pad);
+
+      fill(row === 0 ? 90 : 55, row === 0 ? 90 : 55, row === 0 ? 90 : 55);
+      stroke(35);
+      strokeWeight(1);
+      rect(x, y, layout.ss, layout.ss, 3);
+      drawItemAt(inventory[i], x, y, layout.ss);
+    }
+  }
+
+  // 3x3 crafting grid sits below the inventory
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      let i = row * 3 + col;
+      let x = layout.craftX + col * (layout.ss + layout.pad);
+      let y = layout.craftY + row * (layout.ss + layout.pad);
+      fill(48, 48, 48);
+      stroke(28);
+      strokeWeight(1);
+      rect(x, y, layout.ss, layout.ss, 3);
+      drawItemAt(craftGrid[i], x, y, layout.ss);
+    }
+  }
+
+  // Arrow pointing from grid to output slot
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  text("→", layout.arrowX, layout.arrowY);
+
+  // Output slot
+  craftOutput = checkCraftingRecipe();
+  fill(craftOutput ? 75 : 42, craftOutput ? 95 : 55, 42);
+  stroke(28);
+  strokeWeight(2);
+  rect(layout.outX, layout.outY, layout.ss, layout.ss, 3);
+  drawItemAt(craftOutput, layout.outX, layout.outY, layout.ss);
+}
+
+// All the pixel coordinates for the inventory layout in one place
+// I put this in its own function so drawInventoryScreen and handleInventoryClick always use the exact same numbers and clicks land in the right spot
+function getInvLayout() {
+  let ss = 42;
+  let pad = 4;
+  let invX = width / 2 - (9 * (ss + pad)) / 2;
+  let invY = height / 2 - (4 * (ss + pad)) / 2 - 40;
+  let craftX = invX;
+  let craftY = invY + 4 * (ss + pad) + 28;
+  let arrowX = craftX + 3 * (ss + pad) + 22;
+  let arrowY = craftY + (ss + pad);
+  let outX = arrowX + 26;
+  let outY = craftY + (ss + pad) / 2;
+  return {ss, pad, invX, invY, craftX, craftY, arrowX, arrowY, outX, outY};
 }
