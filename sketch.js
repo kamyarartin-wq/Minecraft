@@ -40,6 +40,11 @@ let inventory  = new Array(36).fill(null);
 let selectedHotbar = 0;
 let inventoryOpen = false;
 
+// Crafting
+let craftGrid = new Array(9).fill(null);
+let craftOutput = null;
+let heldItem = null;
+
 // Load all images
 function preload() {
   imgs[GRASS] = loadImage('grass.png');
@@ -227,4 +232,113 @@ function getInvLayout() {
   let outX = arrowX + 26;
   let outY = craftY + (ss + pad) / 2;
   return {ss, pad, invX, invY, craftX, craftY, arrowX, arrowY, outX, outY};
+}
+
+// Scans the 3x3 grid to find box of placed items then normalizes it so the recipe matches no matter where in the grid you put things
+function checkCraftingRecipe() {
+  let pat = craftGrid.map(s => s ? s.type : AIR);
+
+  let minR = 3, maxR = -1, minC = 3, maxC = -1;
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (pat[r * 3 + c] !== AIR) {
+        if (r < minR) {
+          minR = r;
+        }
+        if (r > maxR) {
+          maxR = r;
+        }
+        if (c < minC) {
+          minC = c;
+        }
+        if (c > maxC) {
+          maxC = c;
+        }
+      }
+    }
+  }
+  if (maxR === -1) {
+    return null;
+  }
+
+  let h = maxR - minR + 1;
+  let w = maxC - minC + 1;
+  let norm = [];
+  for (let r = minR; r <= maxR; r++) {
+    for (let c = minC; c <= maxC; c++) {
+      norm.push(pat[r * 3 + c]);
+    }
+  }
+  return matchRecipe(norm, w, h);
+}
+
+// Compares pattern against every known recipe
+function matchRecipe(n, w, h) {
+  // One log anywhere = 4 planks
+  if (w === 1 && h === 1 && n[0] === LOG) {
+    return {type: PLANK, count: 4};
+  }
+
+  // Two planks stacked vertically = 4 sticks
+  if (w === 1 && h === 2 && n[0] === PLANK && n[1] === PLANK) {
+    return {type: STICK, count: 4};
+  }
+
+  // Wood Pickaxe three planks across the top, stick down the center
+  if (w === 3 && h === 2 && n[0]===PLANK && n[1]===PLANK && n[2]===PLANK && n[3]===AIR && n[4]===STICK && n[5]===AIR) {
+    return {type: WOOD_PICK, count: 1};
+  }
+  if (w === 3 && h === 3 && n[0]===PLANK && n[1]===PLANK && n[2]===PLANK && n[3]===AIR && n[4]===STICK && n[5]===AIR && n[6]===AIR && n[7]===STICK && n[8]===AIR) {
+    return {type: WOOD_PICK, count: 1};
+  }
+
+  // Stone Pickaxe same shape but stone on top
+  if (w === 3 && h === 2 && n[0]===STONE && n[1]===STONE && n[2]===STONE && n[3]===AIR && n[4]===STICK && n[5]===AIR) {
+    return {type: STONE_PICK, count: 1};
+  }
+  if (w === 3 && h === 3 && n[0]===STONE && n[1]===STONE && n[2]===STONE && n[3]===AIR && n[4]===STICK && n[5]===AIR && n[6]===AIR   && n[7]===STICK && n[8]===AIR) {
+    return {type: STONE_PICK, count: 1};
+  }
+
+  // Iron Pickaxe iron ore on top
+  if (w === 3 && h === 2 && n[0]===IRON_ORE && n[1]===IRON_ORE && n[2]===IRON_ORE && n[3]===AIR && n[4]===STICK && n[5]===AIR) {
+    return {type: IRON_PICK, count: 1};
+  }
+  return null;
+}
+
+// Routes inventory clicks to the right handler based on where the mouse landed
+function handleInventoryClick() {
+  let L = getInvLayout();
+
+  // Check main inventory slots
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 9; col++) {
+      let i = row * 9 + col;
+      let x = L.invX + col * (L.ss + L.pad);
+      let y = L.invY + row * (L.ss + L.pad);
+      if (inSlot(x, y, L.ss)) {
+        clickSlot(inventory, i);
+        return;
+      }
+    }
+  }
+
+  // Check crafting grid slots
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      let i = row * 3 + col;
+      let x = L.craftX + col * (L.ss + L.pad);
+      let y = L.craftY + row * (L.ss + L.pad);
+      if (inSlot(x, y, L.ss)) {
+        clickSlot(craftGrid, i);
+        return;
+      }
+    }
+  }
+
+  // Check the output slot
+  if (inSlot(L.outX, L.outY, L.ss) && craftOutput) {
+    collectCraft();
+  }
 }
