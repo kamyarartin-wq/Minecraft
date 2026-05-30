@@ -7,6 +7,7 @@
 
 // Constants
 const BLOCK_SIZE = 40;
+const AIR = 0;
 const GRASS = 1;
 const DIRT = 2;
 const STONE = 3;
@@ -296,7 +297,7 @@ function matchRecipe(n, w, h) {
   if (w === 3 && h === 2 && n[0]===STONE && n[1]===STONE && n[2]===STONE && n[3]===AIR && n[4]===STICK && n[5]===AIR) {
     return {type: STONE_PICK, count: 1};
   }
-  if (w === 3 && h === 3 && n[0]===STONE && n[1]===STONE && n[2]===STONE && n[3]===AIR && n[4]===STICK && n[5]===AIR && n[6]===AIR   && n[7]===STICK && n[8]===AIR) {
+  if (w === 3 && h === 3 && n[0]===STONE && n[1]===STONE && n[2]===STONE && n[3]===AIR && n[4]===STICK && n[5]===AIR && n[6]===AIR && n[7]===STICK && n[8]===AIR) {
     return {type: STONE_PICK, count: 1};
   }
 
@@ -340,5 +341,55 @@ function handleInventoryClick() {
   // Check the output slot
   if (inSlot(L.outX, L.outY, L.ss) && craftOutput) {
     collectCraft();
+  }
+}
+
+// All mouse clicks go to inventory when it's open
+function mousePressed() {
+  if (inventoryOpen) {
+    handleInventoryClick();
+    return;
+  }
+}
+
+// Test to check if the mouse is inside a slot
+function inSlot(x, y, size) {
+  return mouseX > x && mouseX < x + size && mouseY > y && mouseY < y + size;
+}
+
+// Moves exactly one item between the held item and a slot
+function clickSlot(arr, index) {
+  let slot = arr[index];
+
+  if (heldItem) {
+    if (!slot) {
+      // Empty slot place
+      arr[index] = {type: heldItem.type, count: 1};
+    } 
+    else if (slot.type === heldItem.type) {
+      // Same type just add
+      slot.count++;
+    } 
+    else {
+      // Different type swap
+      let temp = {type: slot.type, count: slot.count};
+      arr[index] = {type: heldItem.type, count: 1};
+      heldItem = temp;
+      return;
+    }
+    heldItem.count--;
+    if (heldItem.count <= 0) {
+      heldItem = null;
+    }
+  }
+  else {
+    // Nothing held pick up item from slot
+    if (slot && slot.count > 0) {
+      heldItem = {type: slot.type, count: 1};
+      slot.count--;
+      if (slot.count <= 0) {
+        arr[index] = null;
+      }
+    }
   }
 }
