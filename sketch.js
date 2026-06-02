@@ -5,6 +5,16 @@
 // Extra for Experts:
 // - describe what you did to take this project "above and beyond"
 
+// World
+let world = [];
+const WORLD_COLS = 200;
+const WORLD_ROWS = 60;
+let surfaceRow = [];
+
+// Camera
+let camX = 0;
+let camY = 0;
+
 // Constants
 const BLOCK_SIZE = 40;
 const AIR = 0;
@@ -67,10 +77,13 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  generateWorld();
 }
 
 function draw() {
-  background("red");
+  background(135, 206, 235);
+
+  drawWorld();
 
   drawHotbar();
 
@@ -389,6 +402,74 @@ function clickSlot(arr, index) {
       slot.count--;
       if (slot.count <= 0) {
         arr[index] = null;
+      }
+    }
+  }
+}
+
+// Builds the whole world from scratch using Perlin noise for the terrain shape
+function generateWorld() {
+  // Start everything as air then fill in the ground below the surface
+  for (let r = 0; r < WORLD_ROWS; r++) {
+    world.push(new Array(WORLD_COLS).fill(AIR));
+  }
+
+  // The random offset means the world is different every time you load
+  let noiseX = random(1000);
+  for (let c = 0; c < WORLD_COLS; c++) {
+    let n = noise(c * 0.04 + noiseX);
+    surfaceRow[c] = Math.floor(map(n, 0, 1, 12, 22));
+  }
+
+  // Grass on top, 3 dirt below, then solid stone all the way down
+  for (let c = 0; c < WORLD_COLS; c++) {
+    let surf = surfaceRow[c];
+    for (let r = surf; r < WORLD_ROWS; r++) {
+      if (r === surf) {
+        world[r][c] = GRASS;
+      }
+      else if (r < surf + 4) {
+        world[r][c] = DIRT;
+      }
+      else {
+        world[r][c] = STONE;
+      }
+    }
+  }
+
+  // Randomly replace some stone blocks with iron ore 1.2% chance
+  for (let r = 0; r < WORLD_ROWS; r++) {
+    for (let c = 0; c < WORLD_COLS; c++) {
+      if (world[r][c] === STONE) {
+        let roll = random();
+        if (roll < 0.012) {
+          world[r][c] = IRON_ORE;
+        }
+      }
+    }
+  }
+}
+
+// Rendering
+function drawWorld() {
+  let startC = Math.max(0, Math.floor(camX / BLOCK_SIZE));
+  let endC = Math.min(WORLD_COLS - 1, Math.ceil((camX + width) / BLOCK_SIZE));
+  let startR = Math.max(0, Math.floor(camY / BLOCK_SIZE));
+  let endR = Math.min(WORLD_ROWS - 1, Math.ceil((camY + height) / BLOCK_SIZE));
+  
+  // Only loops through blocks that are actually on screen right now
+  for (let r = startR; r <= endR; r++) {
+    for (let c = startC; c <= endC; c++) {
+      let b = world[r][c];
+      if (b === AIR) {
+        continue;
+      }
+
+      let px = c * BLOCK_SIZE;
+      let py = r * BLOCK_SIZE;
+
+      if (imgs[b]) {
+        image(imgs[b], px, py, BLOCK_SIZE, BLOCK_SIZE);
       }
     }
   }
