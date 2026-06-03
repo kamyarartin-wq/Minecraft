@@ -448,6 +448,39 @@ function generateWorld() {
       }
     }
   }
+
+  placeTrees();
+}
+
+// Plants trees in the world
+function placeTrees() {
+  let c = 6;
+  while (c < WORLD_COLS - 10) {
+    let surf = surfaceRow[c];
+    let trunkH = Math.floor(random(4, 7));
+
+    // Trunk goes straight up from the surface row
+    for (let r = surf - trunkH; r < surf; r++) {
+      if (r >= 0) {
+        world[r][c] = LOG;
+      }
+    }
+
+    // Leaves spread around the top of the trunk
+    // Only cover air
+    let top = surf - trunkH;
+    for (let lr = top - 2; lr <= top + 1; lr++) {
+      for (let lc = c - 2; lc <= c + 2; lc++) {
+        if (lr >= 0 && lr < WORLD_ROWS && lc >= 0 && lc < WORLD_COLS) {
+          if (world[lr][lc] === AIR) {
+            world[lr][lc] = LEAVES;
+          }
+        }
+      }
+    }
+
+    c += Math.floor(random(7, 14));
+  }
 }
 
 // Rendering
@@ -473,4 +506,25 @@ function drawWorld() {
       }
     }
   }
+}
+
+// Takes the crafted item and removes one ingredient from each occupied crafting slot
+function collectCraft() {
+  if (!craftOutput) {
+    return;
+  }
+  if (!addItem(craftOutput.type, craftOutput.count)) {
+    return;
+  }
+
+  // Consume one from each ingredient slot that was used
+  for (let i = 0; i < craftGrid.length; i++) {
+    if (craftGrid[i]) {
+      craftGrid[i].count--;
+      if (craftGrid[i].count <= 0) {
+        craftGrid[i] = null;
+      }
+    }
+  }
+  craftOutput = null;
 }
