@@ -29,6 +29,9 @@ const WOOD_PICK = 8;
 const STONE_PICK = 9;
 const IRON_ORE = 10;
 const IRON_PICK = 11;
+const GRAVITY = 0.55;
+const MOVE_SPEED = 3.5;
+const JUMP_VEL = -11;
 
 // Images
 let imgs = {};
@@ -527,4 +530,88 @@ function collectCraft() {
     }
   }
   craftOutput = null;
+}
+
+
+// Physics
+function updatePhysics() {
+  player.vx = 0;
+  if (keyIsDown(65) || keyIsDown(LEFT_ARROW)) {
+    player.vx = -MOVE_SPEED;
+    player.facing = -1;
+  }
+  if (keyIsDown(68) || keyIsDown(RIGHT_ARROW)) {
+    player.vx = MOVE_SPEED;
+    player.facing = 1;
+  }
+
+  // Gravity every frame
+  player.vy += GRAVITY;
+  if (player.vy > 20) {
+    player.vy = 20;
+  }
+
+  // Move X first then do Y
+  player.x += player.vx;
+  resolveCollisions('x');
+
+  player.y += player.vy;
+  player.onGround = false;
+  resolveCollisions('y');
+
+  // World borders so you can't walk off the edge
+  if (player.x < 0) {
+    player.x = 0;
+  }
+  if (player.x + player.w > WORLD_COLS * BLOCK_SIZE) {
+    player.x = WORLD_COLS * BLOCK_SIZE - player.w;
+  }
+  if (player.y + player.h > WORLD_ROWS * BLOCK_SIZE) {
+    player.y = WORLD_ROWS * BLOCK_SIZE - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  }
+}
+
+// Checks all four corners of the player hitbox against the grid and pushes them out of solid blocks
+function resolveCollisions(axis) {
+  let corners = [{x: player.x + 1, y: player.y + 1}, {x: player.x + player.w - 1, y: player.y + 1}, {x: player.x + 1, y: player.y + player.h - 1}, {x: player.x + player.w - 1, y: player.y + player.h - 1},];
+
+  for (let pt of corners) {
+    let col = Math.floor(pt.x / BLOCK_SIZE);
+    let row = Math.floor(pt.y / BLOCK_SIZE);
+
+    if (col < 0 || col >= WORLD_COLS || row < 0 || row >= WORLD_ROWS) {
+      continue;
+    }
+    let b = world[row][col];
+
+    if (b === AIR || b === LEAVES) {
+      continue;
+    }
+
+    if (axis === 'x') {
+      // Push out horizontally based on direction
+      if (player.vx > 0) {
+        player.x = col * BLOCK_SIZE - player.w;
+        player.vx = 0;
+      }
+      else if (player.vx < 0) {
+        player.x = (col + 1) * BLOCK_SIZE;
+        player.vx = 0;
+      }
+    }
+      else {
+      if (player.vy > 0) {
+        // when landing on a block set onGround so jumping works
+        player.y = row * BLOCK_SIZE - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+        else if (player.vy < 0) {
+        player.y = (row + 1) * BLOCK_SIZE;
+        player.vy = 0;
+      }
+    }
+  }
 }
