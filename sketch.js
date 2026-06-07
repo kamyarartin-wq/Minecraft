@@ -33,6 +33,11 @@ const GRAVITY = 0.55;
 const MOVE_SPEED = 3.5;
 const JUMP_VEL = -11;
 
+// Mining
+let miningTarget = null;
+let miningProgress = 0;
+const blockHardness = {[GRASS]: 60, [DIRT]: 60, [STONE]: 220, [LOG]: 130, [LEAVES]: 20, [PLANK]: 80, [IRON_ORE]: 280};
+
 // Images
 let imgs = {};
 let playerImgs = {};
@@ -601,17 +606,153 @@ function resolveCollisions(axis) {
         player.vx = 0;
       }
     }
-      else {
+    else {
       if (player.vy > 0) {
         // when landing on a block set onGround so jumping works
         player.y = row * BLOCK_SIZE - player.h;
         player.vy = 0;
         player.onGround = true;
       }
-        else if (player.vy < 0) {
+      else if (player.vy < 0) {
         player.y = (row + 1) * BLOCK_SIZE;
         player.vy = 0;
       }
     }
+  }
+}
+
+
+// Hold left click on a block to mine it
+function handleMining() {
+  if (!mouseIsPressed || mouseButton !== LEFT) {
+    miningTarget = null;
+    miningProgress = 0;
+    return;
+  }
+
+  // Convert mouse pixel position to world block coordinates
+  let wc = Math.floor((mouseX + camX) / BLOCK_SIZE);
+  let wr = Math.floor((mouseY + camY) / BLOCK_SIZE);
+
+  if (wc < 0 || wc >= WORLD_COLS || wr < 0 || wr >= WORLD_ROWS) {
+    return;
+  }
+  if (world[wr][wc] === AIR) {
+    return;
+  }
+
+  // Reach check
+  let pcx = player.x + player.w / 2;
+  let pcy = player.y + player.h / 2;
+  let bcx = wc * BLOCK_SIZE + BLOCK_SIZE / 2;
+  let bcy = wr * BLOCK_SIZE + BLOCK_SIZE / 2;
+  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 1.5) {
+    return;
+  }
+
+  // If player switched to a different block reset the progress
+  if (!miningTarget || miningTarget.col !== wc || miningTarget.row !== wr) {
+    miningTarget = {col: wc, row: wr};
+    miningProgress = 0;
+  }
+  let hardness = blockHardness[world[wr][wc]] || 80;
+  let speedMult = 1;
+
+  // Better pickaxes multiply the mining speed
+  let held = inventory[selectedHotbar];
+  if (held) {
+    if (held.type === WOOD_PICK) {
+      speedMult = 2;
+    }
+    if (held.type === STONE_PICK) {
+      speedMult = 4;
+    }
+    if (held.type === IRON_PICK) {
+      speedMult = 6;
+    }
+  }
+  miningProgress += (1 / hardness) * speedMult;
+
+  // When block is fully broken remove it from the world and drop it into inventory
+  if (miningProgress >= 1) {
+    let broken = world[wr][wc];
+    world[wr][wc] = AIR;
+    addItem(broken, 1);
+    miningTarget = null;
+    miningProgress = 0;
+  }
+}
+
+// Shows a dark overlay and a yellow progress bar on the block while being mined
+function drawMiningOverlay() {
+  if (!miningTarget) {
+    return;
+  }
+  let px = miningTarget.col * BLOCK_SIZE;
+  let py = miningTarget.row * BLOCK_SIZE;
+
+  // The overlay gets darker as miningProgress increases toward 1
+  fill(0, 0, 0, miningProgress * 160);
+  noStroke();
+  rect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+
+  // Yellow progress bar along the bottom of the block
+  fill(255, 210, 0);
+  rect(px, py + BLOCK_SIZE - 5, BLOCK_SIZE * miningProgress, 5);
+}
+
+// Places the selected hotbar item at the block the mouse is hovering over using Q
+function placeBlock() {
+  let slot = inventory[selectedHotbar];
+  if (!slot || slot.count <= 0) {
+    return;
+  }
+
+  // Only actual block types can be placed
+  if (![GRASS, DIRT, STONE, LOG, PLANK, LEAVES].includes(slot.type)) {
+    return;
+  }
+
+  let wc = Math.floor((mouseX + camX) / BLOCK_SIZE);
+  let wr = Math.floor((mouseY + camY) / BLOCK_SIZE);
+  if (wc < 0 || wc >= WORLD_COLS || wr < 0 || wr >= WORLD_ROWS) {
+    return;
+  }
+  if (world[wr][wc] !== AIR) {
+    return;
+  }
+
+  // Reach check
+  let pcx = player.x + player.w / 2;
+  let pcy = player.y + player.h / 2;
+  let bcx = wc * BLOCK_SIZE + BLOCK_SIZE / 2;
+  let bcy = wr * BLOCK_SIZE + BLOCK_SIZE / 2;
+  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 1.5) {
+    return;
+  }
+
+  // Figure out which grid cells the player currently occupies
+  let pc1 = Math.floor(player.x / BLOCK_SIZE);
+  let pc2 = Math.floor((player.x + player.w) / BLOCK_SIZE);
+  let pr1 = Math.floor(player.y / BLOCK_SIZE);
+  let pr2 = Math.floor((player.y + player.h) / BLOCK_SIZE);
+
+  let overlapping = (wc >= pc1 && wc <= pc2 && wr >= pr1 && wr <= pr2);
+
+  if (overlapping) {
+    // Can't place a block inside player
+    if (player.onGround) {
+      return;
+    }
+
+    // If you're in the air you can place under yourself and it puts you on top of it
+    player.y = wr * BLOCK_SIZE - player.h;
+    player.vy = 0;
+  }
+
+  world[wr][wc] = slot.type;
+  slot.count--;
+  if (slot.count <= 0) {
+    inventory[selectedHotbar] = null;
   }
 }
