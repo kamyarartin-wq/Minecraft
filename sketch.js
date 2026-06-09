@@ -690,7 +690,7 @@ function handleMining() {
   let pcy = player.y + player.h / 2;
   let bcx = wc * BLOCK_SIZE + BLOCK_SIZE / 2;
   let bcy = wr * BLOCK_SIZE + BLOCK_SIZE / 2;
-  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 1.5) {
+  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 2) {
     return;
   }
 
@@ -771,7 +771,7 @@ function placeBlock() {
   let pcy = player.y + player.h / 2;
   let bcx = wc * BLOCK_SIZE + BLOCK_SIZE / 2;
   let bcy = wr * BLOCK_SIZE + BLOCK_SIZE / 2;
-  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 1.5) {
+  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 2) {
     return;
   }
 
