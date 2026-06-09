@@ -85,26 +85,64 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  noSmooth();
+  imageMode(CORNER);
+  noiseDetail(4, 0.5);
   generateWorld();
+
+  // Spawn in the middle of the world a few blocks above the surface
+  let mid = Math.floor(WORLD_COLS / 2);
+  player.x = mid * BLOCK_SIZE;
+  player.y = (surfaceRow[mid] - 5) * BLOCK_SIZE;
 }
 
 function draw() {
   background(135, 206, 235);
 
+  // Camera centers on the player every frame
+  camX = player.x + player.w / 2 - width / 2;
+  camY = player.y + player.h / 2 - height / 2;
+
+  // Everything in world space gets shifted by the camera so it scrolls correctly
+  push();
+  translate(-camX, -camY);
   drawWorld();
+  drawPlayer();
+  if (miningTarget && !inventoryOpen) {
+    drawMiningOverlay();
+  }
+  pop();
 
+  // UI draws in screen space after the world push/pop so it doesn't scroll
   drawHotbar();
-
   if (inventoryOpen) {
     drawInventoryScreen();
   }
+
+  // Held item floats right under the cursor while dragging
+  if (heldItem) {
+    drawItemAt(heldItem, mouseX - 16, mouseY - 16, 32);
+  }
+
+  // Pause physics and mining when the inventory is open so nothing moves while you craft
+  if (!inventoryOpen) {
+    updatePhysics();
+    handleMining();
+  }
 }
 
+// Picks the right image based on what the player is doing and flips it when facing left
 function drawPlayer() {
   push();
   translate(player.x + player.w / 2, player.y + player.h / 2);
+  // Flip the image horizontally
   if (player.facing === -1) {
     scale(-1, 1);
+  }
+  let img = playerImgs.standing;
+
+  if (miningTarget) {
+    img = playerImgs.mining;
   }
   else if (Math.abs(player.vx) > 0.3) {
     if (frameCount % 30 < 15) {
@@ -113,6 +151,12 @@ function drawPlayer() {
     else {
       img = playerImgs.standing;
     }
+  }
+
+  if (img) {
+    let sw = BLOCK_SIZE * 1.2;
+    let sh = BLOCK_SIZE * 2.2;
+    image(img, -sw / 2, -sh / 2, sw, sh);
   }
   pop();
 }
@@ -754,5 +798,33 @@ function placeBlock() {
   slot.count--;
   if (slot.count <= 0) {
     inventory[selectedHotbar] = null;
+  }
+}
+
+// W or Space to jump, Q to place, E to toggle inventory and 1-9 for hotbar
+function keyPressed() {
+  if ((key === 'w' || key === 'W' || key === ' ') && !inventoryOpen) {
+    if (player.onGround) {
+      player.vy = JUMP_VEL;
+    }
+  }
+
+  // Q places a block at wherever the mouse is hovering
+  if ((key === 'q' || key === 'Q') && !inventoryOpen) {
+    placeBlock();
+  }
+
+  if (key === 'e' || key === 'E') {
+    inventoryOpen = !inventoryOpen;
+    // If you close the inventory while holding an item, toss it back so nothing gets lost
+    if (!inventoryOpen && heldItem) {
+      addItem(heldItem.type, heldItem.count);
+      heldItem = null;
+    }
+  }
+
+  // Number keys 1-9 switch the selected hotbar slot
+  if (key >= '1' && key <= '9') {
+    selectedHotbar = int(key) - 1;
   }
 }
