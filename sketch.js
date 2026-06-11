@@ -125,10 +125,57 @@ function draw() {
   }
 
   // Pause physics and mining when the inventory is open so nothing moves while you craft
-  if (!inventoryOpen) {
+  if (!inventoryOpen && millis() >= 10000) {
     updatePhysics();
     handleMining();
   }
+
+  // The instructions screen
+  if (millis() < 10000) {
+    drawInstructionsScreen();
+  }
+}
+
+// Draws the instructions
+function drawInstructionsScreen() {
+  // Semi transparent dark cover over the screen
+  fill(20, 20, 20, 230);
+  noStroke();
+  rect(0, 0, width, height);
+
+  textAlign(CENTER, CENTER);
+  
+  // Title text
+  fill(255);
+  stroke(0);
+  strokeWeight(4);
+  textSize(36);
+  text("HOW TO PLAY", width / 2, height / 2 - 140);
+
+  // Instructions content panel
+  noStroke();
+  fill(255, 255, 255, 220);
+  textSize(18);
+  
+  let startY = height / 2 - 60;
+  let gap = 32;
+  
+  text("A / D or LEFT / RIGHT ARROWS = Move Left / Right", width / 2, startY);
+  text("W or SPACEBAR = Jump Upwards", width / 2, startY + gap);
+  text("HOLD LEFT CLICK = Mine Blocks", width / 2, startY + gap * 2);
+  text("Q = Place Selected Block from Hotbar", width / 2, startY + gap * 3);
+  text("E = Toggle Inventory & Crafting Screen", width / 2, startY + gap * 4);
+  text("1 - 9 KEYS = Switch Selected Hotbar Slot", width / 2, startY + gap * 5);
+
+  // Dynamic countdown calculations
+  let secondsRemaining = Math.ceil((10000 - millis()) / 1000);
+  
+  stroke(0);
+  strokeWeight(3);
+  fill(255, 210, 0);
+  textSize(22);
+  text("Game starting in " + secondsRemaining + "s", width / 2, height / 2 + 180);
+  noStroke();
 }
 
 // Picks the right image based on what the player is doing and flips it when facing left
