@@ -38,11 +38,15 @@ let miningTarget = null;
 let miningProgress = 0;
 const blockHardness = {[GRASS]: 60, [DIRT]: 60, [STONE]: 220, [LOG]: 130, [LEAVES]: 20, [PLANK]: 80, [IRON_ORE]: 280};
 
-// Images
+// Images and Sounds
 let imgs = {};
 let playerImgs = {};
 let cowImg;
 let chickenImg;
+let breakSound;
+let placeSound;
+let walkSound;
+let lastWalkSoundTime = 0;
 
 // Player
 let player = {
@@ -89,6 +93,11 @@ function preload() {
 
   cowImg = loadImage('cow-2d.png');
   chickenImg = loadImage('chicken-2d.png');
+
+  soundFormats('mp3', 'wav', 'ogg');
+  breakSound = loadSound('break.mp3');
+  placeSound = loadSound('place.wav');
+  walkSound = loadSound('walk.wav');
 }
 
 function setup() {
@@ -743,6 +752,20 @@ function updatePhysics() {
     player.facing = 1;
   }
 
+  // Handle walking sound
+  if (Math.abs(player.vx) > 0 && player.onGround) {
+    if (millis()- lastWalkSoundTime >= 400) {
+      if (walkSound && walkSound.isLoaded()) {
+        walkSound.play();
+      }
+      lastWalkSoundTime = millis();
+    }
+  }
+  else if (Math.abs(player.vx) === 0) {
+    // Reset timer so the sound triggers immediately on the next step
+    lastWalkSoundTime = 0;
+  }
+
   // Gravity every frame
   player.vy += GRAVITY;
   if (player.vy > 20) {
@@ -871,6 +894,10 @@ function handleMining() {
     let broken = world[wr][wc];
     world[wr][wc] = AIR;
     addItem(broken, 1);
+    // Play breaking sound effect
+    if (breakSound && breakSound.isLoaded()) {
+      breakSound.play();
+    }
     miningTarget = null;
     miningProgress = 0;
   }
@@ -944,6 +971,10 @@ function placeBlock() {
   }
 
   world[wr][wc] = slot.type;
+  // Play the placing sound effect
+  if (placeSound && placeSound.isLoaded()) {
+    placeSound.play();
+  }
   slot.count--;
   if (slot.count <= 0) {
     inventory[selectedHotbar] = null;
