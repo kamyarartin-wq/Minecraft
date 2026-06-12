@@ -41,6 +41,8 @@ const blockHardness = {[GRASS]: 60, [DIRT]: 60, [STONE]: 220, [LOG]: 130, [LEAVE
 // Images
 let imgs = {};
 let playerImgs = {};
+let cowImg;
+let chickenImg;
 
 // Player
 let player = {
@@ -53,6 +55,9 @@ let player = {
   onGround: false,
   facing: 1,
 };
+
+// Animals
+let animals = [];
 
 // Inventory
 let inventory  = new Array(36).fill(null);
@@ -81,6 +86,9 @@ function preload() {
   playerImgs.standing = loadImage('player-standing.png');
   playerImgs.walking = loadImage('player-walking.png');
   playerImgs.mining = loadImage('player-mining.png');
+
+  cowImg = loadImage('cow-2d.png');
+  chickenImg = loadImage('chicken-2d.png');
 }
 
 function setup() {
@@ -89,6 +97,7 @@ function setup() {
   imageMode(CORNER);
   noiseDetail(4, 0.5);
   generateWorld();
+  spawnAnimals();
 
   // Spawn in the middle of the world a few blocks above the surface
   let mid = Math.floor(WORLD_COLS / 2);
@@ -107,8 +116,9 @@ function draw() {
   push();
   translate(-camX, -camY);
   drawWorld();
+  drawAnimals();
   drawPlayer();
-  if (miningTarget && !inventoryOpen) {
+  if (miningTarget && !inventoryOpen && millis() >= 10000) {
     drawMiningOverlay();
   }
   pop();
@@ -128,11 +138,100 @@ function draw() {
   if (!inventoryOpen && millis() >= 10000) {
     updatePhysics();
     handleMining();
+    updateAnimals();
   }
 
   // The instructions screen
   if (millis() < 10000) {
     drawInstructionsScreen();
+  }
+}
+
+// For loop to drop animals from the sky
+function spawnAnimals() {
+  for (let i = 0; i < 8; i++) {
+    let col = Math.floor(random(10, WORLD_COLS - 10));
+    let type = random() < 0.5 ? 'cow' : 'chicken';
+    
+    animals.push({
+      x: col * BLOCK_SIZE,
+      y: random(0, 100),
+      type: type,
+      vx: random(-1, 1),
+      facing: 1,
+      changeTimer: Math.floor(random(60, 180))
+    });
+  }
+}
+
+
+
+// Moves background animals and stops them at the surface level
+function updateAnimals() {
+  for (let a of animals) {
+    // Find out what column the animal is currently standing on
+    let col = Math.floor((a.x + BLOCK_SIZE / 2) / BLOCK_SIZE);
+    col = constrain(col, 0, WORLD_COLS - 1);
+    
+    // Calculate ground level based on surface row data
+    let groundY = surfaceRow[col] * BLOCK_SIZE;
+    let sizeOffset = a.type === 'cow' ? BLOCK_SIZE * 0.9 : BLOCK_SIZE * 0.6;
+    let targetY = groundY - sizeOffset;
+
+    if (a.y < targetY) {
+      // Animal is still dropping from the air
+      a.y += 5; 
+      if (a.y > targetY) {
+        a.y = targetY;
+      }
+    } 
+    else {
+      // Animal is on the ground so manage walking directions
+      a.y = targetY; 
+      a.x += a.vx;
+      a.changeTimer--;
+      if (a.changeTimer <= 0) {
+        a.vx = random([-1, 0, 1]) * 0.7;
+        a.changeTimer = Math.floor(random(80, 240));
+      }
+    }
+
+    // Set facing direction for image
+    if (a.vx > 0) {
+      a.facing = 1;
+    }
+    if (a.vx < 0) {
+      a.facing = -1;
+    }
+
+    // Constrain within map boundaries
+    if (a.x < 0) {
+      a.x = 0; a.vx *= -1;
+    }
+    if (a.x > WORLD_COLS * BLOCK_SIZE - BLOCK_SIZE) {
+      a.x = WORLD_COLS * BLOCK_SIZE - BLOCK_SIZE; a.vx *= -1;
+    }
+  }
+}
+
+// Draws cows and chickens scaling them nicely
+function drawAnimals() {
+  for (let a of animals) {
+    let img = a.type === 'cow' ? cowImg : chickenImg;
+    if (!img) {
+      continue;
+    }
+
+    let w = a.type === 'cow' ? BLOCK_SIZE * 1.2 : BLOCK_SIZE * 0.6;
+    let h = a.type === 'cow' ? BLOCK_SIZE * 0.9 : BLOCK_SIZE * 0.6;
+
+    push();
+    translate(a.x + w / 2, a.y + h / 2);
+    if (a.facing === -1) {
+      scale(-1, 1);
+    }
+    image(img, -w / 2, -h / 2, w, h);
+    pop();
   }
 }
 
@@ -458,6 +557,9 @@ function handleInventoryClick() {
 
 // All mouse clicks go to inventory when it's open
 function mousePressed() {
+  if (millis() < 10000) {
+    return;
+  }
   if (inventoryOpen) {
     handleInventoryClick();
     return;
@@ -850,6 +952,9 @@ function placeBlock() {
 
 // W or Space to jump, Q to place, E to toggle inventory and 1-9 for hotbar
 function keyPressed() {
+  if (millis() < 10000) {
+    return;
+  }
   if ((key === 'w' || key === 'W' || key === ' ') && !inventoryOpen) {
     if (player.onGround) {
       player.vy = JUMP_VEL;
@@ -874,4 +979,8 @@ function keyPressed() {
   if (key >= '1' && key <= '9') {
     selectedHotbar = int(key) - 1;
   }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
