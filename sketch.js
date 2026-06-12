@@ -3,7 +3,7 @@
 // April 16
 //
 // Extra for Experts:
-// - describe what you did to take this project "above and beyond"
+// - I used Perlin noise to give hills and downhill to the map.
 
 // World
 let world = [];
@@ -739,7 +739,6 @@ function collectCraft() {
   craftOutput = null;
 }
 
-
 // Physics
 function updatePhysics() {
   player.vx = 0;
@@ -837,7 +836,6 @@ function resolveCollisions(axis) {
   }
 }
 
-
 // Hold left click on a block to mine it
 function handleMining() {
   if (!mouseIsPressed || mouseButton !== LEFT) {
@@ -858,11 +856,11 @@ function handleMining() {
   }
 
   // Reach check
-  let pcx = player.x + player.w / 2;
-  let pcy = player.y + player.h / 2;
-  let bcx = wc * BLOCK_SIZE + BLOCK_SIZE / 2;
-  let bcy = wr * BLOCK_SIZE + BLOCK_SIZE / 2;
-  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 2) {
+  // Use the exact center of the player for reach
+  let pCol = Math.floor((player.x + player.w / 2) / BLOCK_SIZE);
+  let minRow = Math.floor(player.y / BLOCK_SIZE) - 1;
+  let maxRow = Math.floor((player.y + player.h - 0.1) / BLOCK_SIZE) + 1;
+  if (Math.abs(wc - pCol) > 1 || wr < minRow || wr > maxRow) {
     return;
   }
 
@@ -943,11 +941,11 @@ function placeBlock() {
   }
 
   // Reach check
-  let pcx = player.x + player.w / 2;
-  let pcy = player.y + player.h / 2;
-  let bcx = wc * BLOCK_SIZE + BLOCK_SIZE / 2;
-  let bcy = wr * BLOCK_SIZE + BLOCK_SIZE / 2;
-  if (dist(pcx, pcy, bcx, bcy) > BLOCK_SIZE * 2) {
+  // Use the exact center of the player for reach
+  let pCol = Math.floor((player.x + player.w / 2) / BLOCK_SIZE);
+  let minRow = Math.floor(player.y / BLOCK_SIZE) - 1;
+  let maxRow = Math.floor((player.y + player.h - 0.1) / BLOCK_SIZE) + 1;
+  if (Math.abs(wc - pCol) > 1 || wr < minRow || wr > maxRow) {
     return;
   }
 
